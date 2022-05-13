@@ -11,6 +11,7 @@ import { AcmPage, AcmPageContent, AcmPageHeader } from '../AcmPage/AcmPage'
 import { AcmSelect } from '../AcmSelect/AcmSelect'
 import { AcmTextArea } from '../AcmTextArea/AcmTextArea'
 import { AcmTextInput } from '../AcmTextInput/AcmTextInput'
+import { AcmNumberInput } from '../AcmNumberInput/AcmNumberInput'
 import { AcmForm, AcmSubmit } from './AcmForm'
 
 const meta: Meta = {
@@ -22,8 +23,7 @@ export default meta
 
 export function Form() {
     return (
-        <AcmPage>
-            <AcmPageHeader title="AcmForm" />
+        <AcmPage header={<AcmPageHeader title="AcmForm" />}>
             <AcmPageContent id="form">
                 <PageSection variant="light">
                     <FormStory />
@@ -41,6 +41,7 @@ export function FormStory() {
     const [multiselectValue, setMultiselectValue] = useState<string[]>([])
     const [labels, setLabels] = useState<Record<string, string>>()
     const [submitText, setSubmitText] = useState('Submit')
+    const [number, setNumber] = useState<number>(0)
     // const [errors, setErrors] = useState<string[]>([])
 
     return (
@@ -56,7 +57,8 @@ export function FormStory() {
                 onChange={setEmail}
                 validation={(value) => {
                     if (typeof value === 'string') {
-                        const regExp = /^[\w-]+(\.[\w-]+)*@([a-z0-9-]+(\.[a-z0-9-]+)*?\.[a-z]{2,6}|(\d{1,3}\.){3}\d{1,3})(:\d{4})?$/
+                        const regExp =
+                            /^[\w-]+(\.[\w-]+)*@([a-z0-9-]+(\.[a-z0-9-]+)*?\.[a-z]{2,6}|(\d{1,3}\.){3}\d{1,3})(:\d{4})?$/
                         if (!regExp.test(value)) return 'Must be a valid email.'
                     }
                 }}
@@ -77,6 +79,25 @@ export function FormStory() {
                     }
                 }}
                 isRequired
+            />
+
+            <AcmFormSection title="Number input" spacing></AcmFormSection>
+            <AcmNumberInput
+                label="Number input with validation (must be positive)"
+                id="validation"
+                value={number}
+                onChange={(e: React.FormEvent<HTMLInputElement>) =>
+                    setNumber(Number((e.target as HTMLInputElement).value))
+                }
+                onMinus={() => setNumber(number - 1)}
+                onPlus={() => setNumber(number + 1)}
+                required
+                validation={(value) => {
+                    if (value < 0) {
+                        return 'Value must be a positive number'
+                    }
+                    return undefined
+                }}
             />
             <AcmFormSection title="TextArea" spacing></AcmFormSection>
             <AcmTextArea

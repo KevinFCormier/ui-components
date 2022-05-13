@@ -2,7 +2,7 @@
 
 import { FormGroup, Label, TextInput } from '@patternfly/react-core'
 import React, { Fragment, useState, useRef } from 'react'
-import { useFormContext } from '../AcmForm/AcmForm'
+import { useValidationContext } from '../AcmForm/AcmForm'
 
 export function AcmLabelsInput(props: {
     id: string
@@ -15,7 +15,7 @@ export function AcmLabelsInput(props: {
     isDisabled?: boolean
 }) {
     const [inputValue, setInputValue] = useState<string>()
-    const formContext = useFormContext()
+    const ValidationContext = useValidationContext()
     const inputRef: React.MutableRefObject<HTMLInputElement | null> = useRef(null)
 
     function addLabel(input: string) {
@@ -97,7 +97,7 @@ export function AcmLabelsInput(props: {
                         }}
                         id={props.id}
                         placeholder={props.placeholder}
-                        isDisabled={/* istanbul ignore next */ props.isDisabled || formContext.isReadOnly}
+                        isDisabled={/* istanbul ignore next */ props.isDisabled || ValidationContext.isReadOnly}
                         onChange={(value) => {
                             setInputValue(value)
                         }}
@@ -122,9 +122,9 @@ export function AcmLabelsInput(props: {
                                 case 'Backspace':
                                     /* istanbul ignore else */
                                     if (!inputValue) {
-                                        const labels = (document.querySelectorAll(
+                                        const labels = document.querySelectorAll(
                                             '.label-pill button'
-                                        ) as unknown) as HTMLButtonElement[]
+                                        ) as unknown as HTMLButtonElement[]
                                         /* istanbul ignore else */
                                         if (labels && labels.length > 0) {
                                             labels[labels.length - 1].focus()

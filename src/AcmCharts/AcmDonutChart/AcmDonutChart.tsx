@@ -1,9 +1,10 @@
 /* Copyright Contributors to the Open Cluster Management project */
 
-import React from 'react'
-import { Card, CardTitle, Badge, Skeleton } from '@patternfly/react-core'
-import { ChartDonut, ChartLabel, ChartLegend } from '@patternfly/react-charts'
 import { makeStyles } from '@material-ui/styles'
+import { ChartDonut, ChartLabel, ChartLegend } from '@patternfly/react-charts'
+import { Badge, Card, CardTitle, Skeleton } from '@patternfly/react-core'
+import React from 'react'
+import { Link } from 'react-router-dom'
 import { useViewport } from '../AcmChartGroup'
 
 type StyleProps = {
@@ -64,9 +65,9 @@ const LegendLabel = ({ ...props }: { datum?: Data }) => {
     /*istanbul ignore next */
     const link = props.datum?.link
     return link ? (
-        <a href={link}>
+        <Link to={link}>
             <ChartLabel {...props} />
-        </a>
+        </Link>
     ) : (
         <ChartLabel {...props} />
     )
@@ -82,12 +83,24 @@ export function AcmDonutChart(props: {
     data: Array<Data>
     loading?: boolean
     colorScale?: string[]
+    donutLabel?: {
+        title: string
+        subTitle: string
+    }
 }) {
     const chartData = props.data.map((d) => ({ x: d.key, y: d.value }))
     const legendData: Array<LegendData> = props.data.map((d) => ({ name: `${d.value} ${d.key}`, link: d.link }))
     const total = props.data.reduce((a, b) => a + b.value, 0)
     /* istanbul ignore next */
     const primary = props.data.find((d) => d.isPrimary) || { key: '', value: 0 }
+    let donutLabel = ''
+    if (props.donutLabel) {
+        donutLabel = props.donutLabel.title
+    } else if (total === 0) {
+        donutLabel = '0%'
+    } else {
+        donutLabel = `${Math.round((primary.value / total) * 100)}%`
+    }
 
     const { viewWidth } = useViewport()
     const classes = useStyles({ ...props, danger: props.data.some((d) => d.isDanger), viewWidth } as StyleProps)
@@ -115,8 +128,8 @@ export function AcmDonutChart(props: {
                         right: 145,
                         top: 20,
                     }}
-                    title={total == 0 ? '0%' : `${Math.round((primary.value / total) * 100)}%`}
-                    subTitle={primary.key}
+                    title={donutLabel}
+                    subTitle={props.donutLabel?.subTitle ?? primary.key}
                     width={/* istanbul ignore next */ viewWidth < 376 ? viewWidth : 376}
                     height={/* istanbul ignore next */ viewWidth < 376 ? 150 : 200}
                     // Devs can supply an array of colors the donut chart will use ex: ['#E62325', '#EC7A08', '#F4C145', '#2B9AF3', '#72767B']

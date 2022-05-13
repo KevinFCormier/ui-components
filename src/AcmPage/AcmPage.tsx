@@ -6,10 +6,13 @@ import {
     Button,
     Card,
     CardBody,
+    Label,
+    LabelProps,
     Page,
     PageSection,
     PageSectionVariants,
     Popover,
+    PopoverProps,
     Split,
     SplitItem,
     Stack,
@@ -20,75 +23,144 @@ import {
 import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons'
 import React, { Fragment, ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { AcmAlertGroup, AcmAlertProvider } from '../AcmAlert/AcmAlert'
+import { AcmAlertContext, AcmAlertGroup, AcmAlertProvider } from '../AcmAlert/AcmAlert'
 import { AcmDrawer, AcmDrawerProvider } from '../AcmDrawer/AcmDrawer'
 import { AcmErrorBoundary } from '../AcmErrorBoundary/AcmErrorBoundary'
-import { AcmScrollable } from '../AcmScrollable/AcmScrollable'
 
-export function AcmPage(props: { children: ReactNode; hasDrawer?: boolean }) {
+export function AcmPage(props: { header: ReactNode; children: ReactNode; hasDrawer?: boolean }) {
     /* istanbul ignore if */
     if (props.hasDrawer) {
         return (
             <AcmDrawerProvider>
                 <AcmDrawer>
-                    <Page>{props.children}</Page>
+                    <Page additionalGroupedContent={<Fragment>{props.header}</Fragment>} groupProps={{ sticky: 'top' }}>
+                        {props.children}
+                    </Page>
                 </AcmDrawer>
             </AcmDrawerProvider>
         )
     } else {
-        return <Page>{props.children}</Page>
+        return (
+            <Page additionalGroupedContent={<Fragment>{props.header}</Fragment>} groupProps={{ sticky: 'top' }}>
+                {props.children}
+            </Page>
+        )
     }
 }
 
-export function AcmPageHeader(props: {
+export interface AcmPageHeaderProps {
     title: string
     titleTooltip?: string | React.ReactNode
+    popoverPosition?: PopoverProps['position']
+    popoverAutoWidth?: PopoverProps['hasAutoWidth']
+    label?: string | React.ReactNode
+    labelColor?: LabelProps['color']
     description?: string | React.ReactNode
     breadcrumb?: { text: string; to?: string }[]
     navigation?: React.ReactNode
     controls?: React.ReactNode
     switches?: React.ReactNode
     actions?: React.ReactNode
-}) {
+}
+
+export function AcmPageHeader(props: AcmPageHeaderProps) {
     return (
-        <Fragment>
-            <PageSection variant={PageSectionVariants.light}>
-                <Split hasGutter>
-                    <SplitItem isFilled>
-                        <Stack hasGutter>
-                            {props.breadcrumb && (
-                                <StackItem>
-                                    <AcmBreadcrumb breadcrumb={props.breadcrumb} />
-                                </StackItem>
-                            )}
+        <PageSection variant={PageSectionVariants.light} padding={{ default: 'noPadding' }}>
+            <Split>
+                <SplitItem isFilled>
+                    <Stack hasGutter>
+                        <StackItem isFilled>
+                            <PageSection
+                                variant={PageSectionVariants.light}
+                                style={{
+                                    paddingBottom: props.navigation ? 'inherit' : undefined,
+                                    paddingTop: props.breadcrumb
+                                        ? 'var(--pf-c-page__main-breadcrumb--PaddingTop)'
+                                        : undefined,
+                                }}
+                            >
+                                <Stack hasGutter>
+                                    {props.breadcrumb && (
+                                        <StackItem>
+                                            <AcmBreadcrumb breadcrumb={props.breadcrumb} />
+                                        </StackItem>
+                                    )}
+                                    <StackItem isFilled>
+                                        <Split hasGutter>
+                                            <SplitItem>
+                                                <TextContent>
+                                                    <Title headingLevel="h1">
+                                                        {props.title}
+                                                        {props.titleTooltip && (
+                                                            <Popover
+                                                                bodyContent={props.titleTooltip}
+                                                                hasAutoWidth={
+                                                                    /* istanbul ignore next */
+                                                                    props.popoverAutoWidth ?? true
+                                                                }
+                                                                position={
+                                                                    /* istanbul ignore next */
+                                                                    props.popoverPosition ?? 'right'
+                                                                }
+                                                            >
+                                                                <Button
+                                                                    variant="link"
+                                                                    style={{
+                                                                        padding: 0,
+                                                                        marginLeft: '8px',
+                                                                        verticalAlign: 'middle',
+                                                                    }}
+                                                                >
+                                                                    <OutlinedQuestionCircleIcon />
+                                                                </Button>
+                                                            </Popover>
+                                                        )}
+                                                    </Title>
+                                                </TextContent>
+                                            </SplitItem>
+                                            {props.label && props.labelColor && (
+                                                <SplitItem>
+                                                    <Label color={props.labelColor}>{props.label}</Label>
+                                                </SplitItem>
+                                            )}
+                                            {props.switches && (
+                                                <SplitItem>
+                                                    <span
+                                                        style={{
+                                                            paddingLeft: '24px',
+                                                            height: '100%',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                        }}
+                                                    >
+                                                        {props.switches}
+                                                    </span>
+                                                </SplitItem>
+                                            )}
+                                            {/* <SplitItem>{props.description && <p>{props.description}</p>}</SplitItem> */}
+                                        </Split>
+                                        {props.description && (
+                                            <div style={{ paddingTop: '8px' }}>{props.description}</div>
+                                        )}
+                                    </StackItem>
+                                </Stack>
+                            </PageSection>
+                        </StackItem>
+                        {props.navigation && (
                             <StackItem>
-                                <TextContent>
-                                    <Title headingLevel="h1">
-                                        {props.title}
-                                        {props.titleTooltip && (
-                                            <Popover hasAutoWidth bodyContent={props.titleTooltip}>
-                                                <Button
-                                                    variant="link"
-                                                    style={{
-                                                        padding: 0,
-                                                        marginLeft: '8px',
-                                                        verticalAlign: 'middle',
-                                                    }}
-                                                >
-                                                    <OutlinedQuestionCircleIcon />
-                                                </Button>
-                                            </Popover>
-                                        )}
-                                        {props.switches && (
-                                            <span style={{ paddingLeft: '48px' }}>{props.switches}</span>
-                                        )}
-                                    </Title>
-                                    {props.description && <p>{props.description}</p>}
-                                </TextContent>
+                                <PageSection
+                                    variant={PageSectionVariants.light}
+                                    type="nav"
+                                    style={{ paddingTop: 0, paddingBottom: 0 }}
+                                >
+                                    {props.navigation}
+                                </PageSection>
                             </StackItem>
-                        </Stack>
-                    </SplitItem>
-                    <SplitItem>
+                        )}
+                    </Stack>
+                </SplitItem>
+                <SplitItem>
+                    <PageSection variant={PageSectionVariants.light} style={{ height: '100%' }}>
                         <Stack hasGutter>
                             {props.controls && (
                                 <StackItem style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
@@ -109,17 +181,10 @@ export function AcmPageHeader(props: {
                                 </StackItem>
                             )}
                         </Stack>
-                    </SplitItem>
-                </Split>
-            </PageSection>
-            {props.navigation && (
-                <div style={{ borderTop: 'thin solid #00000022' }}>
-                    <PageSection variant={PageSectionVariants.light} type="nav" style={{ paddingTop: 0 }}>
-                        {props.navigation}
                     </PageSection>
-                </div>
-            )}
-        </Fragment>
+                </SplitItem>
+            </Split>
+        </PageSection>
     )
 }
 
@@ -139,7 +204,7 @@ export function AcmBreadcrumb(props: { breadcrumb?: { text: string; to?: string 
         return (
             <Breadcrumb>
                 {breadcrumb.map((crumb, i) => (
-                    <BreadcrumbItem key={crumb.to}>
+                    <BreadcrumbItem key={i}>
                         {breadcrumb.length > 1 && i === breadcrumb.length - 1 ? (
                             <a aria-current="page" className="pf-c-breadcrumb__link pf-m-current">
                                 {crumb.text}
@@ -163,14 +228,26 @@ export type AcmPageContentProps = {
 
     /** React children for this component */
     children: ReactNode
+
+    variant?: 'light'
 }
 
 export function AcmPageContent(props: AcmPageContentProps) {
     return (
         <AcmErrorBoundary key={props.id}>
             <AcmAlertProvider>
-                <AcmAlertGroup isInline canClose />
-                <AcmScrollable borderTop>{props.children}</AcmScrollable>
+                <AcmAlertContext.Consumer>
+                    {(context) => (
+                        <Fragment>
+                            {context.alertInfos.length > 0 && (
+                                <PageSection variant={props.variant} style={{ paddingBottom: 0 }}>
+                                    <AcmAlertGroup isInline canClose />
+                                </PageSection>
+                            )}
+                        </Fragment>
+                    )}
+                </AcmAlertContext.Consumer>
+                {props.children}
             </AcmAlertProvider>
         </AcmErrorBoundary>
     )

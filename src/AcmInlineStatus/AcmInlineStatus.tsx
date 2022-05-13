@@ -1,17 +1,20 @@
 /* Copyright Contributors to the Open Cluster Management project */
 
-import React from 'react'
-import { Spinner, Popover, PopoverProps, Button } from '@patternfly/react-core'
+import { makeStyles } from '@material-ui/core'
+import { Button, Popover, PopoverProps, Spinner } from '@patternfly/react-core'
 import {
+    AsleepIcon,
     CheckCircleIcon,
     ExclamationCircleIcon,
     ExclamationTriangleIcon,
     MinusCircleIcon,
     UnknownIcon,
-    AsleepIcon,
+    ResourcesEmptyIcon,
+    RunningIcon,
+    FileAltIcon,
 } from '@patternfly/react-icons'
+import React from 'react'
 import { AcmIcon, AcmIconVariant } from '../AcmIcons/AcmIcons'
-import { makeStyles } from '@material-ui/core'
 
 const useStyles = makeStyles({
     container: {
@@ -38,6 +41,9 @@ export enum StatusType {
     'pending' = 'pending',
     'unknown' = 'unknown',
     'sleep' = 'sleep',
+    'empty' = 'empty',
+    'draft' = 'draft',
+    'running' = 'running',
 }
 
 export function AcmInlineStatus(props: { type: StatusType; status: string | React.ReactNode; popover?: PopoverProps }) {
@@ -81,6 +87,12 @@ function StatusIcon(props: { type: StatusType }) {
             return <MinusCircleIcon className={classes.iconMargin} color="var(--pf-global--disabled-color--100)" />
         case StatusType.sleep:
             return <AsleepIcon className={classes.iconMargin} color="var(--pf-global--palette--purple-500)" />
+        case StatusType.empty:
+            return <ResourcesEmptyIcon className={classes.iconMargin} color="var(--pf-global--disabled-color--100)" />
+        case StatusType.draft:
+            return <FileAltIcon className={classes.iconMargin} color="var(--pf-global--disabled-color--100)" />
+        case StatusType.running:
+            return <RunningIcon className={classes.iconMargin} color="var(--pf-global--success-color--100)" />
         case 'unknown':
         default:
             return <UnknownIcon className={classes.iconMargin} color="var(--pf-global--disabled-color--100)" />

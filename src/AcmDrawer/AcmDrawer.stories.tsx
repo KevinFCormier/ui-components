@@ -11,9 +11,12 @@ import { AcmPage } from '../AcmPage/AcmPage'
 export default {
     title: 'Drawer',
     component: AcmDrawer,
+    argTypes: {
+        isResizable: { control: { type: 'boolean' }, defaultValue: false },
+    },
 }
 
-export const Drawer = () => {
+export const Drawer = (args: Record<string, unknown>) => {
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
     const [labels, setLabels] = useState<Record<string, string>>({
         cloud: 'Amazon',
@@ -51,6 +54,7 @@ export const Drawer = () => {
                         </ActionGroup>
                     </div>
                 }
+                {...args}
             >
                 <div style={{ height: '100vh' }}>
                     <AcmButton onClick={() => setIsExpanded(!isExpanded)}>Open drawer</AcmButton>

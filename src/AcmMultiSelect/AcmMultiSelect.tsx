@@ -1,9 +1,9 @@
 /* Copyright Contributors to the Open Cluster Management project */
 
-import { FormGroup, Popover, Select, SelectOption, SelectProps, SelectVariant } from '@patternfly/react-core'
+import { Button, FormGroup, Popover, Select, SelectOption, SelectProps, SelectVariant } from '@patternfly/react-core'
 import HelpIcon from '@patternfly/react-icons/dist/js/icons/help-icon'
 import React, { Fragment, ReactNode, useLayoutEffect, useState } from 'react'
-import { useFormContext } from '../AcmForm/AcmForm'
+import { useValidationContext } from '../AcmForm/AcmForm'
 
 type AcmMultiSelectProps = Pick<
     SelectProps,
@@ -23,9 +23,9 @@ type AcmMultiSelectProps = Pick<
 
 export function AcmMultiSelect(props: AcmMultiSelectProps) {
     const [open, setOpen] = useState(false)
-    const formContext = useFormContext()
-    const [validated, setValidated] = useState<'default' | 'success' | 'error' | 'warning' | undefined>()
-    const [error, setError] = useState<string>()
+    const ValidationContext = useValidationContext()
+    const [validated, setValidated] = useState<'default' | 'success' | 'error' | 'warning'>('default')
+    const [error, setError] = useState<string>('')
     const {
         validation,
         labelHelp,
@@ -56,23 +56,23 @@ export function AcmMultiSelect(props: AcmMultiSelectProps) {
                 error = validation(props.value)
             }
         }
-        setError(error)
-        if (formContext.validate) {
-            setValidated(error ? 'error' : undefined)
+        setError(error ?? '')
+        if (ValidationContext.validate) {
+            setValidated(error ? 'error' : 'default')
         }
-        formContext.setError(props.id, error)
+        ValidationContext.setError(props.id, error)
     }, [props.value, props.hidden])
 
     useLayoutEffect(() => {
-        setValidated(error ? 'error' : undefined)
-    }, [formContext.validate])
+        setValidated(error ? 'error' : 'default')
+    }, [ValidationContext.validate])
 
     useLayoutEffect(() => {
         if (value === undefined || value.length === 0) {
             setPlaceholderText(<span style={{ color: '#666' }}>{placeholder}</span>)
         } else {
             const selectedItems = React.Children.map(props.children, (child) => {
-                const option = (child as unknown) as SelectOption
+                const option = child as unknown as SelectOption
                 if (value.includes(option.props.value as string)) return option.props.children
                 return undefined
             })
@@ -118,14 +118,15 @@ export function AcmMultiSelect(props: AcmMultiSelectProps) {
                         headerContent={labelHelpTitle}
                         bodyContent={labelHelp}
                     >
-                        <button
+                        <Button
+                            variant="plain"
                             id={`${props.id}-label-help-button`}
                             aria-label="More info"
                             onClick={(e) => e.preventDefault()}
                             className="pf-c-form__group-label-help"
                         >
                             <HelpIcon noVerticalAlign />
-                        </button>
+                        </Button>
                     </Popover>
                 ) : (
                     <Fragment />
@@ -159,8 +160,12 @@ export function AcmMultiSelect(props: AcmMultiSelectProps) {
                           }
                         : undefined
                 }
-                placeholderText={placeholderText}
-                isDisabled={props.isDisabled || formContext.isReadOnly}
+                placeholderText={
+                    /* istanbul ignore next */ props.variant === SelectVariant.typeaheadMulti
+                        ? placeholder
+                        : placeholderText
+                }
+                isDisabled={props.isDisabled || ValidationContext.isReadOnly}
             />
             {validated === 'error' ? (
                 <div style={{ borderTop: '1.75px solid red', paddingBottom: '6px' }}></div>

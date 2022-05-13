@@ -1,10 +1,9 @@
 /* Copyright Contributors to the Open Cluster Management project */
 
-import React, { useState } from 'react'
 import { makeStyles } from '@material-ui/styles'
-import '@patternfly/react-core/dist/styles/base.css'
-import { AcmSelect } from '../AcmSelect/AcmSelect'
 import { SelectOption } from '@patternfly/react-core'
+import React, { useState } from 'react'
+import { AcmSelect } from '../AcmSelect/AcmSelect'
 
 type AcmLogWindowProps = {
     id: string
@@ -20,7 +19,9 @@ type AcmLogWindowProps = {
 
 const useStyles = makeStyles({
     containerSelect: {
-        width: '33%',
+        width: 'auto',
+        'min-width': 'min-content',
+        'max-width': 'max-content',
     },
     logWindow: {
         color: 'var(--pf-global--palette--black-150)',

@@ -1,14 +1,22 @@
 /* Copyright Contributors to the Open Cluster Management project */
 
 /* eslint-disable react/display-name */
-import { PageSection, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core'
+import {
+    ButtonVariant,
+    PageSection,
+    Text,
+    TextContent,
+    TextVariants,
+    ToggleGroup,
+    ToggleGroupItem,
+} from '@patternfly/react-core'
 import { fitContent, TableGridBreakpoint, truncate } from '@patternfly/react-table'
 import React, { useState } from 'react'
 import { AcmInlineStatus, StatusType } from '../AcmInlineStatus/AcmInlineStatus'
 import { AcmPage, AcmPageContent, AcmPageHeader } from '../AcmPage/AcmPage'
 import { Provider } from '../AcmProvider'
 import { AcmInlineProvider } from '../AcmProvider/AcmInlineProvider/AcmInlineProvider'
-import { AcmTable, IAcmTableColumn } from '../AcmTable/AcmTable'
+import { AcmTable, IAcmTableColumn, IAcmTableAction, IAcmTableButtonAction } from '../AcmTable/AcmTable'
 
 interface IExampleData {
     uid: number
@@ -18,30 +26,62 @@ interface IExampleData {
     gender: string
     ip_address: string
 }
+
+const hidden = { table: { disable: true } }
+const gridBreakPointLabels: { [key: string]: unknown } = { dynamic: 'dynamic' }
+Object.entries(TableGridBreakpoint).forEach(([key, value]) => {
+    gridBreakPointLabels[value] = key
+})
+
 export default {
     title: 'Table',
     component: AcmTable,
-    excludeStories: ['TableStory', 'TableEmptyStory', 'TableLoadingStory', 'exampleData', 'commonProperties'],
+    excludeStories: ['TableStory', 'exampleData', 'exampleSubData'],
     argTypes: {
         'Include tableActions': { control: { type: 'boolean' }, defaultValue: true },
-        'Include rowActions': { control: { type: 'boolean' }, defaultValue: true },
-        'Include bulkActions': { control: { type: 'boolean' }, defaultValue: true },
+        'Include rowActions': { control: { type: 'boolean' }, defaultValue: false },
+        'Include rowActionResolver': { control: { type: 'boolean' }, defaultValue: true },
         'Include extraToolbarControls': { control: { type: 'boolean' }, defaultValue: true },
+        'Use groupSummaryFn': { control: { type: 'boolean' }, defaultValue: false },
+        gridBreakPoint: {
+            options: ['dynamic', ...Object.values(TableGridBreakpoint)],
+            control: {
+                type: 'inline-radio',
+                labels: gridBreakPointLabels,
+            },
+            defaultValue: 'dynamic',
+        },
+        plural: { defaultValue: 'addresses' },
+        items: hidden,
+        addSubRows: hidden,
+        initialSelectedItems: hidden,
+        columns: hidden,
+        keyFn: hidden,
+        groupFn: hidden,
+        groupSummaryFn: hidden,
+        tableActions: hidden,
+        rowActions: hidden,
+        rowActionResolver: hidden,
+        extraToolbarControls: hidden,
+        emptyState: hidden,
+        onSelect: hidden,
+        page: hidden,
+        setPage: hidden,
+        search: hidden,
+        setSearch: hidden,
+        sort: hidden,
+        setSort: hidden,
+        perPageOptions: hidden,
     },
 }
 
 export function Table(args: Record<string, unknown>) {
     return (
-        <div style={{ height: '100vh' }}>
-            <AcmPage>
-                <AcmPageHeader title="AcmTable" />
-                <AcmPageContent id="table">
-                    <PageSection variant="light" isFilled>
-                        <TableStory {...args} />
-                    </PageSection>
-                </AcmPageContent>
-            </AcmPage>
-        </div>
+        <AcmPage header={<AcmPageHeader title="AcmTable" />}>
+            <PageSection>
+                <TableStory {...args} />
+            </PageSection>
+        </AcmPage>
     )
 }
 
@@ -49,36 +89,209 @@ export function TableStory(args: Record<string, unknown>) {
     const [items, setItems] = useState<IExampleData[]>(exampleData.slice(0, 105))
     return (
         <AcmTable<IExampleData>
-            plural="addresses"
             items={items}
             columns={columns}
             keyFn={(item: IExampleData) => item.uid.toString()}
             {...commonProperties(args, (items) => setItems(items), items)}
-            gridBreakPoint={TableGridBreakpoint.none}
+        />
+    )
+}
+
+export function TableExpandable(args: Record<string, unknown>) {
+    const [items, setItems] = useState<IExampleData[]>(exampleData.slice(0, 105))
+    return (
+        <AcmPage header={<AcmPageHeader title="AcmTable with expandable row" />}>
+            <AcmPageContent id="table">
+                <PageSection>
+                    <AcmTable<IExampleData>
+                        items={items}
+                        columns={columns}
+                        keyFn={(item: IExampleData) => item.uid?.toString()}
+                        addSubRows={(item: IExampleData) => {
+                            const mappedItems = exampleSubData.filter(
+                                (subData) => subData.uid?.toString() === item.uid?.toString()
+                            )
+                            if (mappedItems.length === 0) {
+                                return undefined
+                            }
+                            return [
+                                {
+                                    cells: [
+                                        {
+                                            title: (
+                                                <div style={{ marginTop: '16px', marginBottom: '16px' }}>
+                                                    <TextContent>
+                                                        <Text component={TextVariants.h3}>Favorite Colors</Text>
+                                                    </TextContent>
+                                                    <AcmTable<IExampleSubData>
+                                                        plural="stuffs"
+                                                        showToolbar={false}
+                                                        autoHidePagination
+                                                        keyFn={(item: IExampleSubData) => item.suid}
+                                                        columns={[
+                                                            {
+                                                                header: 'First Name',
+                                                                sort: 'firstName',
+                                                                cell: 'firstName',
+                                                            },
+                                                            {
+                                                                header: 'Last Name',
+                                                                sort: 'lastName',
+                                                                cell: 'lastName',
+                                                            },
+                                                            {
+                                                                header: 'Color',
+                                                                cell: 'color',
+                                                            },
+                                                        ]}
+                                                        items={mappedItems}
+                                                        gridBreakPoint={TableGridBreakpoint.none}
+                                                    />
+                                                </div>
+                                            ),
+                                        },
+                                    ],
+                                },
+                            ]
+                        }}
+                        {...commonProperties(args, (items) => setItems(items), items)}
+                    />
+                </PageSection>
+            </AcmPageContent>
+        </AcmPage>
+    )
+}
+export function TableGrouped(args: Record<string, unknown>) {
+    return (
+        <AcmPage header={<AcmPageHeader title="AcmTable with expandable row" />}>
+            <AcmPageContent id="table">
+                <PageSection>
+                    <TableGroupedStory {...args} />
+                </PageSection>
+            </AcmPageContent>
+        </AcmPage>
+    )
+}
+
+function TableGroupedStory(args: Record<string, unknown>) {
+    const [items, setItems] = useState<IExampleData[]>(exampleData.slice(0, 105))
+    return (
+        <AcmTable<IExampleData>
+            items={items}
+            columns={columns}
+            keyFn={(item: IExampleData) => item.uid.toString()}
+            groupFn={(item: IExampleData) => {
+                const provider = getProviderForItem(item)
+                return provider !== Provider.other ? provider : null
+            }}
+            groupSummaryFn={
+                args['Use groupSummaryFn']
+                    ? (items: IExampleData[]) => {
+                          if (items.length > 1) {
+                              return {
+                                  cells: [
+                                      {
+                                          title: `${items.length} addresses`,
+                                          props: {
+                                              colSpan: 6,
+                                          },
+                                      },
+                                      { title: <AcmInlineProvider provider={getProviderForItem(items[0])} /> },
+                                      { title: '' },
+                                  ],
+                              }
+                          } else {
+                              const { firstName, last_name, email, gender, ip_address, uid } = items[0]
+                              return {
+                                  cells: [
+                                      firstName,
+                                      last_name,
+                                      email,
+                                      gender,
+                                      ip_address,
+                                      uid,
+                                      { title: <AcmInlineProvider provider={getProviderForItem(items[0])} /> },
+                                      { title: getAcmInlineStatusForItem(items[0]) },
+                                  ],
+                              }
+                          }
+                      }
+                    : undefined
+            }
+            {...commonProperties(args, (items) => setItems(items), items)}
+        />
+    )
+}
+
+export function TableFiltered(args: Record<string, unknown>) {
+    return (
+        <AcmPage header={<AcmPageHeader title="AcmTable with Filtering" />}>
+            <AcmPageContent id="table">
+                <PageSection>
+                    <TableFilteredStory {...args} />
+                </PageSection>
+            </AcmPageContent>
+        </AcmPage>
+    )
+}
+
+function TableFilteredStory(args: Record<string, unknown>) {
+    const [items, setItems] = useState<IExampleData[]>(exampleData.slice(0, 105))
+    return (
+        <AcmTable<IExampleData>
+            items={items}
+            columns={columns}
+            filters={[
+                {
+                    label: 'Gender',
+                    id: 'gender',
+                    options: [
+                        { label: 'Male', value: 'male' },
+                        { label: 'Female', value: 'female' },
+                        { label: 'Non-binary', value: 'non-binary' },
+                    ],
+                    tableFilterFn: (selectedValues: string[], item: IExampleData) => {
+                        return selectedValues.includes(item['gender'].toLowerCase())
+                    },
+                },
+                {
+                    label: 'Last Name',
+                    id: 'name',
+                    options: [
+                        { label: 'Starts with A-H', value: 'a-h' },
+                        { label: 'Starts with I-P', value: 'i-p' },
+                        { label: 'Starts with Q-Z', value: 'q-z' },
+                    ],
+                    tableFilterFn: (selectedValues: string[], item: IExampleData) => {
+                        return selectedValues.some((value) => {
+                            const expr = new RegExp(`^[${value}]`, 'i')
+                            return expr.test(item.last_name)
+                        })
+                    },
+                },
+            ]}
+            keyFn={(item: IExampleData) => item.uid.toString()}
+            {...commonProperties(args, (items) => setItems(items), items)}
         />
     )
 }
 
 export function TableEmpty(args: Record<string, unknown>) {
     return (
-        <div style={{ height: '100vh' }}>
-            <AcmPage>
-                <AcmPageHeader title="AcmTable Empty" />
-                <AcmPageContent id="table">
-                    <PageSection variant="light" isFilled>
-                        <TableEmptyStory {...args} />
-                    </PageSection>
-                </AcmPageContent>
-            </AcmPage>
-        </div>
+        <AcmPage header={<AcmPageHeader title="AcmTable Empty" />}>
+            <AcmPageContent id="table">
+                <PageSection>
+                    <TableEmptyStory {...args} />
+                </PageSection>
+            </AcmPageContent>
+        </AcmPage>
     )
 }
 
-export function TableEmptyStory(args: Record<string, unknown>) {
+function TableEmptyStory(args: Record<string, unknown>) {
     const [items, setItems] = useState<IExampleData[]>()
     return (
         <AcmTable<IExampleData>
-            plural="addresses"
             items={[]}
             columns={columns}
             keyFn={(item: IExampleData) => item.uid.toString()}
@@ -89,24 +302,20 @@ export function TableEmptyStory(args: Record<string, unknown>) {
 
 export function TableLoading(args: Record<string, unknown>) {
     return (
-        <div style={{ height: '100vh' }}>
-            <AcmPage>
-                <AcmPageHeader title="AcmTable Loading" />
-                <AcmPageContent id="table">
-                    <PageSection variant="light" isFilled>
-                        <TableLoadingStory {...args} />
-                    </PageSection>
-                </AcmPageContent>
-            </AcmPage>
-        </div>
+        <AcmPage header={<AcmPageHeader title="AcmTable Loading" />}>
+            <AcmPageContent id="table">
+                <PageSection>
+                    <TableLoadingStory {...args} />
+                </PageSection>
+            </AcmPageContent>
+        </AcmPage>
     )
 }
 
-export function TableLoadingStory(args: Record<string, unknown>) {
+function TableLoadingStory(args: Record<string, unknown>) {
     const [items, setItems] = useState<IExampleData[]>()
     return (
         <AcmTable<IExampleData>
-            plural="addresses"
             items={undefined}
             columns={columns}
             keyFn={(item: IExampleData) => item.uid.toString()}
@@ -115,29 +324,73 @@ export function TableLoadingStory(args: Record<string, unknown>) {
     )
 }
 
-export function commonProperties(
+function commonProperties(
     args: Record<string, unknown>,
     setItems: (items: IExampleData[]) => void,
     items: IExampleData[] | undefined
 ) {
     return {
+        plural: args.plural as string,
+        searchPlaceholder: args.searchPlaceholder as string,
+        noBorders: args.noBorders as boolean,
+        gridBreakPoint: args.gridBreakPoint === 'dynamic' ? undefined : (args.gridBreakPoint as TableGridBreakpoint),
+        tableActionButtons: args['Include tableActions']
+            ? ([
+                  {
+                      id: 'primary-table-button',
+                      title: 'Primary action',
+                      // eslint-disable-next-line no-console
+                      click: () => console.log('Primary action'),
+                      isDisabled: false,
+                      variant: ButtonVariant.primary,
+                  },
+                  {
+                      id: 'secondary-table-button',
+                      title: 'Secondary action',
+                      // eslint-disable-next-line no-console
+                      click: () => console.log('Secondary action'),
+                      variant: ButtonVariant.secondary,
+                  },
+              ] as IAcmTableButtonAction[])
+            : undefined,
         tableActions: args['Include tableActions']
-            ? [
+            ? ([
                   {
-                      id: 'create',
-                      title: 'Create',
-                      click: () => {
-                          alert('Not implemented')
-                      },
+                      id: 'status-group',
+                      title: 'Status',
+                      actions: [
+                          {
+                              id: 'status-1',
+                              title: 'Status 1',
+                              // eslint-disable-next-line no-console
+                              click: (it: IExampleData[]) => console.log('Status 1 items: ', it),
+                              variant: 'dropdown-action',
+                          },
+                          {
+                              id: 'status-2',
+                              title: 'Status 2',
+                              // eslint-disable-next-line no-console
+                              click: (it: IExampleData[]) => console.log('Status 2 items: ', it),
+                              variant: 'dropdown-action',
+                          },
+                      ],
+                      variant: 'action-group',
                   },
                   {
-                      id: 'import',
-                      title: 'Import',
-                      click: () => {
-                          alert('Not implemented')
-                      },
+                      id: 'separator-1',
+                      variant: 'action-seperator',
                   },
-              ]
+                  {
+                      id: 'delete',
+                      title: 'Delete',
+                      click: (it: IExampleData[]) => {
+                          setItems(
+                              items ? items.filter((i: { uid: number }) => !it.find((item) => item.uid === i.uid)) : []
+                          )
+                      },
+                      variant: 'bulk-action',
+                  },
+              ] as IAcmTableAction<IExampleData>[])
             : undefined,
         rowActions: args['Include rowActions']
             ? [
@@ -150,28 +403,33 @@ export function commonProperties(
                   },
               ]
             : undefined,
-        bulkActions: args['Include bulkActions']
-            ? [
-                  {
-                      id: 'delete',
-                      title: 'Delete',
-                      click: (it: IExampleData[]) => {
-                          setItems(
-                              items ? items.filter((i: { uid: number }) => !it.find((item) => item.uid === i.uid)) : []
-                          )
-                      },
-                  },
-                  {
-                      id: 'action2',
-                      title: 'Action 2',
-                      click: () => null,
-                  },
-                  {
-                      id: 'action3',
-                      title: 'Action 3',
-                      click: () => null,
-                  },
-              ]
+        rowActionResolver: args['Include rowActionResolver']
+            ? (item: IExampleData) => {
+                  if (item.last_name.indexOf('a') > -1) {
+                      return [
+                          {
+                              id: 'topAction',
+                              title: 'Top action!',
+                              isDisabled: true,
+                              tooltip: 'Tooltip for row action item',
+                              tooltipProps: { position: 'left' },
+                              click: () => {
+                                  alert('Not implemented')
+                              },
+                          },
+                          {
+                              id: 'testAction',
+                              title: `${item.firstName} ${item.last_name} is the coolest!`,
+                              addSeparator: true,
+                              click: () => {
+                                  alert('Not implemented')
+                              },
+                          },
+                      ]
+                  } else {
+                      return []
+                  }
+              }
             : undefined,
         extraToolbarControls: args['Include extraToolbarControls'] ? (
             <ToggleGroup>
@@ -179,6 +437,48 @@ export function commonProperties(
                 <ToggleGroupItem text="View 2" />
             </ToggleGroup>
         ) : undefined,
+    }
+}
+
+function getProviderForItem(item: IExampleData) {
+    const chr = item.last_name.charCodeAt(0)
+    switch (chr % 8) {
+        case 0:
+            return Provider.aws
+        case 1:
+            return Provider.azure
+        case 2:
+            return Provider.baremetal
+        case 3:
+            return Provider.gcp
+        case 4:
+            return Provider.ibm
+        case 5:
+            return Provider.other
+        case 6:
+            return Provider.openstack
+        case 7:
+            return Provider.alibaba
+        default:
+            return Provider.vmware
+    }
+}
+
+function getAcmInlineStatusForItem(item: IExampleData) {
+    const chr = item.last_name.charCodeAt(0)
+    switch (chr % 6) {
+        case 0:
+            return <AcmInlineStatus type={StatusType.healthy} status="Healthy" />
+        case 1:
+            return <AcmInlineStatus type={StatusType.unknown} status="Unknown" />
+        case 2:
+            return <AcmInlineStatus type={StatusType.warning} status="Warning" />
+        case 3:
+            return <AcmInlineStatus type={StatusType.danger} status="Danger" />
+        case 4:
+            return <AcmInlineStatus type={StatusType.running} status="Running" />
+        default:
+            return <AcmInlineStatus type={StatusType.progress} status="Progressing" />
     }
 }
 
@@ -225,45 +525,57 @@ const columns: IAcmTableColumn<IExampleData>[] = [
     },
     {
         header: 'Provider',
-        cell: (item) => {
-            const chr = item.last_name.charCodeAt(0)
-            switch (chr % 8) {
-                case 0:
-                    return <AcmInlineProvider provider={Provider.aws} />
-                case 1:
-                    return <AcmInlineProvider provider={Provider.azure} />
-                case 2:
-                    return <AcmInlineProvider provider={Provider.baremetal} />
-                case 3:
-                    return <AcmInlineProvider provider={Provider.gcp} />
-                case 4:
-                    return <AcmInlineProvider provider={Provider.ibm} />
-                case 5:
-                    return <AcmInlineProvider provider={Provider.other} />
-                case 6:
-                    return <AcmInlineProvider provider={Provider.openstack} />
-                default:
-                    return <AcmInlineProvider provider={Provider.vmware} />
-            }
-        },
+        cell: (item) => <AcmInlineProvider provider={getProviderForItem(item)} />,
     },
     {
         header: 'Status',
-        cell: (item) => {
-            const chr = item.last_name.charCodeAt(0)
-            switch (chr % 5) {
-                case 0:
-                    return <AcmInlineStatus type={StatusType.healthy} status="Healthy" />
-                case 1:
-                    return <AcmInlineStatus type={StatusType.unknown} status="Unknown" />
-                case 2:
-                    return <AcmInlineStatus type={StatusType.warning} status="Warning" />
-                case 3:
-                    return <AcmInlineStatus type={StatusType.danger} status="Danger" />
-                default:
-                    return <AcmInlineStatus type={StatusType.progress} status="Progressing" />
-            }
-        },
+        cell: getAcmInlineStatusForItem,
+    },
+]
+
+export type IExampleSubData = {
+    uid: number
+    suid: string
+    firstName: string
+    lastName: string
+    color: string
+}
+
+export const exampleSubData: IExampleSubData[] = [
+    {
+        uid: 103,
+        suid: '1',
+        firstName: 'James',
+        lastName: 'Fisher',
+        color: 'red',
+    },
+    {
+        uid: 103,
+        suid: '2',
+        firstName: 'Han',
+        lastName: 'Solo',
+        color: 'blue',
+    },
+    {
+        uid: 25,
+        suid: '1',
+        firstName: 'Sally',
+        lastName: 'Aspen',
+        color: 'black',
+    },
+    {
+        uid: 25,
+        suid: '2',
+        firstName: 'Kelly',
+        lastName: 'Williams',
+        color: 'yellow',
+    },
+    {
+        uid: 25,
+        suid: '3',
+        firstName: 'Kurt',
+        lastName: 'Daley',
+        color: 'pink',
     },
 ]
 

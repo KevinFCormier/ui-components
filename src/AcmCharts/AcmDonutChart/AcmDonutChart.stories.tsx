@@ -1,8 +1,10 @@
 /* Copyright Contributors to the Open Cluster Management project */
 
+import { createBrowserHistory } from 'history'
 import React from 'react'
-import { AcmDonutChart } from './AcmDonutChart'
+import { Router } from 'react-router-dom'
 import { AcmChartGroup } from '../AcmChartGroup'
+import { AcmDonutChart } from './AcmDonutChart'
 
 export default {
     title: 'Charts',
@@ -38,16 +40,34 @@ export const DonutChart = () => {
         { key: 'Ready', value: 2, isPrimary: true },
         { key: 'Offline', value: 1, isDanger: true },
     ]
+    const insightData = [
+        { key: 'Critical', value: 1 },
+        { key: 'Important', value: 1 },
+        { key: 'Moderate', value: 1 },
+        { key: 'Low', value: 1 },
+    ]
     return (
-        <AcmChartGroup>
-            <AcmDonutChart
-                title="Cluster compliance"
-                description="Overview of policy compliance status"
-                data={complianceData}
-            />
-            <AcmDonutChart title="Pods" description="Overview of pod count and status" data={podData} />
-            <AcmDonutChart title="Cluster status" description="Overview of cluster status" data={clusterData} />
-        </AcmChartGroup>
+        <Router history={createBrowserHistory()}>
+            <AcmChartGroup>
+                <AcmDonutChart
+                    title="Cluster compliance"
+                    description="Overview of policy compliance status"
+                    data={complianceData}
+                />
+                <AcmDonutChart title="Pods" description="Overview of pod count and status" data={podData} />
+                <AcmDonutChart title="Cluster status" description="Overview of cluster status" data={clusterData} />
+                <AcmDonutChart
+                    title="Cluster issues"
+                    description="Overview of cluster issues"
+                    data={insightData}
+                    donutLabel={{
+                        title: '1',
+                        subTitle: 'Clusters with issues',
+                    }}
+                    colorScale={['#E62325', '#EC7A08', '#F4C145', '#2B9AF3', '#72767B']}
+                />
+            </AcmChartGroup>
+        </Router>
     )
 }
 

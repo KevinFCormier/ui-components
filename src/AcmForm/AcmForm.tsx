@@ -1,17 +1,31 @@
 /* Copyright Contributors to the Open Cluster Management project */
 
 import { Button, ButtonProps, Form, FormProps } from '@patternfly/react-core'
-import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react'
+import React, { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { AcmAlertContext } from '../AcmAlert/AcmAlert'
 
-export const FormContext = createContext<{
+export interface IValidationData {
+    /** Flag indicating if controls should validate their input */
     readonly validate: boolean
-    setValidate: (validate: boolean) => void
+
+    /** Mapping of control ids to error strings */
     readonly errors: { [id: string]: string | undefined }
-    setError: (id: string, error?: string) => void
+
+    /** Flag indicating if controls should be read only */
     readonly isReadOnly: boolean
+}
+
+export interface IValidationState extends IValidationData {
+    setValidate: (validate: boolean) => void
+    setError: (id: string, error?: string) => void
     setReadOnly: (disabled: boolean) => void
-}>({
+}
+
+export function hasValidationErrors(state: IValidationData): boolean {
+    return Object.values(state.errors).filter((v) => v).length > 0
+}
+
+export const ValidationContext = createContext<IValidationState>({
     validate: false,
     setValidate: noop,
     errors: {},
@@ -20,48 +34,58 @@ export const FormContext = createContext<{
     setReadOnly: noop,
 })
 
-export function AcmFormProvider(props: { children: ReactNode }) {
-    const [validate, setValidate] = useState(false)
-    const [errors, setErrors] = useState<{ [id: string]: string | undefined }>({})
-    const [isReadOnly, setReadOnly] = useState<boolean>(false)
-    const setError = (id: string, error?: string) => {
-        setErrors((prevState) => {
-            const copy = { ...prevState }
-            copy[id] = error
-            return copy
+export function useValidationState() {
+    const [validationState, setValidationState] = useState<IValidationData>({
+        validate: false,
+        errors: {},
+        isReadOnly: false,
+    })
+    const setValidate = useCallback((validate: boolean) => {
+        setValidationState((validationState) => ({ ...validationState, ...{ validate } }))
+    }, [])
+    const setReadOnly = useCallback((isReadOnly: boolean) => {
+        setValidationState((validationState) => ({ ...validationState, ...{ isReadOnly } }))
+    }, [])
+    const setError = useCallback((id: string, error?: string) => {
+        setValidationState((validationState) => {
+            const newState = { ...validationState }
+            if (!error) {
+                newState.errors = { ...newState.errors }
+                delete newState.errors[id]
+            } else {
+                newState.errors = { ...newState.errors, ...{ [id]: error } }
+            }
+            return newState
         })
-    }
-    // useEffect(() => {
-    //     if (validate) {
-    //         setErrors({})
-    //     }
-    // }, [validate])
-
-    return (
-        <FormContext.Provider
-            value={{ validate, setValidate, errors, setError, isReadOnly: isReadOnly, setReadOnly: setReadOnly }}
-        >
-            {props.children}
-        </FormContext.Provider>
+    }, [])
+    const validationContext: IValidationState = useMemo(
+        () => ({ ...{ setValidate, setReadOnly, setError }, ...validationState }),
+        [validationState]
     )
+    return validationContext
 }
 
-export function useFormContext() {
-    return useContext(FormContext)
+export function AcmValidationProvider(props: { children: ReactNode }) {
+    const validationState = useValidationState()
+    return <ValidationContext.Provider value={validationState}>{props.children}</ValidationContext.Provider>
+}
+
+export function useValidationContext() {
+    return useContext(ValidationContext)
 }
 
 export function AcmForm(props: FormProps) {
     return (
-        <AcmFormProvider>
+        <AcmValidationProvider>
             <Form {...props} onSubmit={/* istanbul ignore next */ (e) => e.preventDefault()} />
-        </AcmFormProvider>
+        </AcmValidationProvider>
     )
 }
 
 type AcmSubmitProps = ButtonProps & { label?: string; processingLabel?: string }
 
 export function AcmSubmit(props: AcmSubmitProps) {
-    const context = useContext(FormContext)
+    const validationContext = useContext(ValidationContext)
     const alertContext = useContext(AcmAlertContext)
     const [isDisabled, setDisabled] = useState(false)
     const [isLoading, setIsLoading] = React.useState(false)
@@ -74,11 +98,14 @@ export function AcmSubmit(props: AcmSubmitProps) {
     }, [])
 
     useEffect(() => {
-        if (context.validate) {
-            const hasError = Object.keys(context.errors).find((id) => context.errors[id] != undefined) != undefined
+        if (validationContext.validate) {
+            const hasError = hasValidationErrors(validationContext)
             setDisabled(hasError)
+            if (!hasError) {
+                alertContext.clearAlerts((alert) => alert.group === 'validation')
+            }
         }
-    }, [context.errors])
+    }, [validationContext.errors])
     return (
         <Button
             type="submit"
@@ -86,9 +113,9 @@ export function AcmSubmit(props: AcmSubmitProps) {
             spinnerAriaValueText={isLoading ? 'Loading' : undefined}
             isLoading={isLoading}
             onClick={async (event) => {
-                const hasError = Object.keys(context.errors).find((id) => context.errors[id] != undefined) != undefined
+                const hasError = hasValidationErrors(validationContext)
                 if (hasError) {
-                    context.setValidate(true)
+                    validationContext.setValidate(true)
                     setDisabled(hasError)
                     alertContext.addAlert({
                         type: 'danger',
@@ -98,8 +125,7 @@ export function AcmSubmit(props: AcmSubmitProps) {
                     })
                 } else {
                     setIsLoading(true)
-                    context.setReadOnly(true)
-                    alertContext.clearAlerts((alertInfo) => alertInfo.group === 'validation')
+                    validationContext.setReadOnly(true)
                     /* istanbul ignore else */
                     if (props.onClick) {
                         try {
@@ -114,7 +140,7 @@ export function AcmSubmit(props: AcmSubmitProps) {
                         /* istanbul ignore next */
                         setTimeout(() => {
                             if (isMountedRef.current) {
-                                context.setReadOnly(false)
+                                validationContext.setReadOnly(false)
                                 setIsLoading(false)
                             }
                         }, 0)
@@ -131,3 +157,9 @@ export function AcmSubmit(props: AcmSubmitProps) {
 function noop() {
     // Do Nothing
 }
+
+/** @deprecated Deprecated - use ValidationContext instead */
+export const FormContext = ValidationContext
+
+/** @deprecated Deprecated - use AcmValidationProvider instead */
+export const AcmFormProvider = AcmValidationProvider

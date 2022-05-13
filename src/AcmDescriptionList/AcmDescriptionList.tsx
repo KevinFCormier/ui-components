@@ -1,16 +1,16 @@
 /* Copyright Contributors to the Open Cluster Management project */
 
-import React from 'react'
+import { makeStyles } from '@material-ui/styles'
 import {
     DescriptionList,
+    DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
-    DescriptionListDescription,
     Grid,
     GridItem,
 } from '@patternfly/react-core'
+import React from 'react'
 import { AcmExpandableCard } from '../AcmExpandable'
-import { makeStyles } from '@material-ui/styles'
 
 const useStyles = makeStyles({
     leftCol: {
@@ -18,6 +18,7 @@ const useStyles = makeStyles({
         ['@media (max-width:768px)']: {
             'margin-bottom': 'var(--pf-global--gutter--md)',
         },
+        'margin-right': 'var(--pf-global--gutter--md)',
     },
 })
 
@@ -35,7 +36,7 @@ export function AcmDescriptionList(props: {
     const classes = useStyles()
     return (
         <AcmExpandableCard title={props.title}>
-            <Grid sm={12} md={6}>
+            <Grid sm={12} md={props.rightItems ? 6 : 12}>
                 <GridItem className={classes.leftCol}>
                     <List items={props.leftItems} />
                 </GridItem>

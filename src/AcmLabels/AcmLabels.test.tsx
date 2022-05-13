@@ -35,9 +35,18 @@ describe('AcmLabels', () => {
             <AcmLabels labels={{ foo: 'bar', cluster: 'management', empty: '' }} collapse={['cluster', 'empty']} />
         )
         expect(getByText('foo=bar')).toBeInTheDocument()
-        expect(getByText('2 more')).toBeInTheDocument()
         getByText('2 more').click()
         expect(getByText('cluster=management')).toBeInstanceOf(HTMLSpanElement)
         expect(getByText('empty')).toBeInTheDocument()
+        getByText('Show less').click()
+        expect(getByText('2 more')).toBeInTheDocument()
+    })
+    test('renders with empty text', () => {
+        const { getByText } = render(
+            <AcmLabels labels={{ cluster: 'management' }} collapse={['cluster']} allCollapsedText="EMPTY" />
+        )
+        expect(getByText('EMPTY')).toBeInTheDocument()
+        getByText('EMPTY').click()
+        expect(getByText('cluster=management')).toBeInstanceOf(HTMLSpanElement)
     })
 })

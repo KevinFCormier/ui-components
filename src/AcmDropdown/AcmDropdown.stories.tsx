@@ -20,9 +20,10 @@ export const Dropdown = (args) => {
     const dropdownItems = [
         { id: 'install-config', text: 'Install config' },
         { id: 'kubeconfig', text: 'Kubeconfig' },
-        { id: 'other-config', text: 'Other config', isDisabled: true, tooltip: 'Forbidden' },
+        { id: 'other-config', text: 'Other config', isAriaDisabled: true, tooltip: 'Forbidden' },
         { id: 'launch-out', text: 'Launch page', icon: <ExternalLinkAltIcon /> },
         { id: 'link item', text: 'Link item', href: 'www.google.com', component: 'a' },
+        { id: 'new-feature', text: 'New feature', label: 'Technology Preview', labelColor: 'orange' },
     ]
     const onSelect = (id: string) => alert(`clicked: ${id}`)
     return (
@@ -38,6 +39,7 @@ export const Dropdown = (args) => {
                     isKebab={args.isKebab}
                     isPlain={true}
                     isPrimary={true}
+                    dropdownPosition={args.dropdownPosition}
                 />
             </CardBody>
         </Card>

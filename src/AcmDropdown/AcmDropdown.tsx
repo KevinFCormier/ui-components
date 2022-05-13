@@ -7,12 +7,13 @@ import {
     DropdownItem,
     DropdownPosition,
     KebabToggle,
+    Label,
+    LabelProps,
     DropdownProps,
+    TooltipPosition,
 } from '@patternfly/react-core'
 import { makeStyles } from '@material-ui/styles'
 import { TooltipWrapper } from '../utils'
-
-// TODO this dropdown is not accessible when the dropdown items are wrapped by the Tooltip component
 
 type Props = Omit<DropdownProps, 'toggle' | 'onSelect'>
 
@@ -29,16 +30,27 @@ export type AcmDropdownProps = Props & {
     isPlain?: boolean
     isPrimary?: boolean
     onToggle?: (isOpen?: boolean) => void
+    tooltipPosition?: TooltipPosition
+    label?: string | React.ReactNode
+    labelColor?: LabelProps['color']
+    dropdownPosition?: DropdownPosition
 }
 
 export type AcmDropdownItems = {
     id: string
     component?: string | React.ReactNode
+    /**
+     * @deprecated Use isAriaDisabled for accessibility
+     */
     isDisabled?: boolean
+    isAriaDisabled?: boolean
     tooltip?: string | React.ReactNode
     text: string | React.ReactNode
     href?: string
     icon?: React.ReactNode
+    tooltipPosition?: TooltipPosition
+    label?: string
+    labelColor?: string
 }
 
 const useStyles = makeStyles({
@@ -91,6 +103,9 @@ const useStyles = makeStyles({
             },
         },
     },
+    label: {
+        marginLeft: '8px',
+    },
 })
 
 export function AcmDropdown(props: AcmDropdownProps) {
@@ -99,25 +114,32 @@ export function AcmDropdown(props: AcmDropdownProps) {
 
     const onSelect = (id: string) => {
         props.onSelect(id)
-        setOpen(!isOpen)
+        setOpen(false)
+        const element = document.getElementById(props.id)
+        /* istanbul ignore else */
+        if (element) element.focus()
     }
 
     return (
-        <TooltipWrapper showTooltip={props.isDisabled && !!props.tooltip} tooltip={props.tooltip}>
+        <TooltipWrapper showTooltip={!!props.tooltip} tooltip={props.tooltip} tooltipPosition={props.tooltipPosition}>
             <Dropdown
                 className={classes.button}
                 onMouseOver={props.onHover}
-                position={DropdownPosition.right}
+                position={props.dropdownPosition || DropdownPosition.right}
                 dropdownItems={props.dropdownItems.map((item) => (
-                    <TooltipWrapper
-                        showTooltip={item.isDisabled && !!item.tooltip}
-                        tooltip={item.tooltip}
+                    <DropdownItem
                         key={item.id}
+                        tooltipProps={{ position: item.tooltipPosition }}
+                        {...item}
+                        onClick={() => onSelect(item.id)}
                     >
-                        <DropdownItem {...item} onClick={() => onSelect(item.id)}>
-                            {item.text}
-                        </DropdownItem>
-                    </TooltipWrapper>
+                        {item.text}
+                        {item.label && item.labelColor && (
+                            <Label className={classes.label} color={item.labelColor}>
+                                {item.label}
+                            </Label>
+                        )}
+                    </DropdownItem>
                 ))}
                 toggle={
                     props.isKebab ? (

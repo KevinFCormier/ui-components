@@ -1,19 +1,22 @@
 /* Copyright Contributors to the Open Cluster Management project */
 
-import '@patternfly/react-core/dist/styles/base.css'
-import React from 'react'
+import { Page, PageSection } from '@patternfly/react-core'
 import { Meta } from '@storybook/react'
-import { PageSection } from '@patternfly/react-core'
-import { AcmIcon, AcmIconVariant } from './AcmIcons'
+import React from 'react'
 import { AcmDescriptionList } from '../AcmDescriptionList/AcmDescriptionList'
+import { AcmIcon, AcmIconVariant } from './AcmIcons'
 
 const meta: Meta = {
     title: 'Icons',
-    component: AcmIcon,
+    argTypes: {
+        size: {
+            control: { type: 'select', options: ['sm', 'md', 'lg', 'xl'], default: 'lg' },
+        },
+    },
 }
 export default meta
 
-export const Icons = () => {
+export const Icons = (args: { size: 'lg' | 'md' | 'xl' | 'sm' }) => {
     const icons = Object.values(AcmIconVariant)
         .sort()
         .map((icon) => {
@@ -21,7 +24,7 @@ export const Icons = () => {
                 key: icon,
                 value: (
                     <div style={{ width: '24px', height: '24px' }}>
-                        <AcmIcon key={icon} icon={icon} />
+                        <AcmIcon key={icon} icon={icon} size={args.size} />
                     </div>
                 ),
             }
@@ -30,8 +33,10 @@ export const Icons = () => {
     const leftItems = icons.slice(0, midpoint)
     const rightItems = icons.slice(midpoint)
     return (
-        <PageSection>
-            <AcmDescriptionList title="Icons" leftItems={leftItems} rightItems={rightItems} />
-        </PageSection>
+        <Page>
+            <PageSection>
+                <AcmDescriptionList title="Icons" leftItems={leftItems} rightItems={rightItems} />
+            </PageSection>
+        </Page>
     )
 }
